@@ -34,7 +34,7 @@ var database = firebase.database();
 
 // Handle Cordova Device Ready Event
 $$(document).on('deviceready', function() {
-    logInPopup();
+    logIn();
 
     $('.content-block p').text(getSession());
 });
