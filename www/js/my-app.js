@@ -34,13 +34,11 @@ var database = firebase.database();
 
 // Handle Cordova Device Ready Event
 $$(document).on('deviceready', function() {
-    logIn();
-
-    $('.content-block p').text(getSession());
+    logInPopup();
 });
 
 function logInPopup(){
-    if(getSession() == null){
+    if(window.localstorage.getItem("guma-login") != "true"){
         myApp.modalLogin("Please log in to continue", "Log In", function(username, password){
             console.log('login ' + username + ' | ' + password);
 
@@ -64,37 +62,16 @@ function logInPopup(){
 }
 
 function logIn(){
-    var today = new Date();
-    var expirationDate = new Date();
-    expirationDate.setTime(today.getTime() + 1000);
-
-    setSession({login: true, logout: false, expiration: expirationDate});
+    window.localstorage.setItem("guma-login", "true");
 
     if(mainView.activePage.name == 'index'){
         mainView.router.loadPage('drivers.html');
     }           
 }
 
-function setSession(data){
-    var sessionIdKey = "guma-session";
-    window.localStorage.setItem(sessionIdKey, JSON.stringify(data));
-}
-function deleteSession(){
-    var sessionIdKey = "guma-session";
-    window.localStorage.removeItem(sessionIdKey);
-}
-function getSession(){
-    var sessionIdKey = "guma-session";
-    var result = null;
-    try{
-        result = JSON.parse(window.localStorage.getItem(sessionIdKey));
-    } catch(e){}
-    return result;
-}
-
 myApp.onPageInit('*', function(page){
     $('.signout').click(function(){
-        deleteSession();
+        window.localstorage.removeItem("guma-login");
         logInPopup();
     });
 
