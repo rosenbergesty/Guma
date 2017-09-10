@@ -41,6 +41,7 @@ function logInPopup(){
     if(window.localStorage.getItem("guma-login") != "true"){
         myApp.modalLogin("Please log in to continue", "Log In", function(username, password){
             console.log('login ' + username + ' | ' + password);
+            $('.content-block p').text('login ' + username + ' | ' + password);
 
             var data = database.ref('dispatchers/').orderByChild('email').equalTo(username);
             data.once('value', function(snapshot){
@@ -49,6 +50,8 @@ function logInPopup(){
                         logIn();
                     } else {
                         console.log('Couldn\'t Log in.');
+                        $('.content-block p').text('couldn\'t log in.');
+
                     }
                 }
             });
