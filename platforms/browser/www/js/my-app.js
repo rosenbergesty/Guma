@@ -5,9 +5,12 @@ var myApp = new Framework7({
         'url:driver.html':{
             name: 'John Doe',
             id: 0
+        },
+        '*':{
+            username: 'username',
+            password: 'password'
         }
-    },
-    tapHold: true
+    }
 });
 var $$ = Dom7;
 
@@ -33,18 +36,82 @@ var database = firebase.database();
 $$(document).on('deviceready', function() {
     console.log("Device is ready!");
 
-    if(mainView.activePage.name == 'index'){
-        mainView.router.loadPage('drivers.html');
-    }
+    logInPopup();
 });
 
-$$(document).on('page:init', function(e){
-    var page = e.detail.page;
+function logInPopup(){
+    if(getCookie('login') != 'true'){
+        myApp.modalLogin("Please log in to continue", "Log In", function(username, password){
+            console.log('login ' + username + ' | ' + password);
 
-    if(page.name == 'drivers'){
-        console.log("dirvers!");
+            var data = database.ref('dispatchers/').orderByChild('email').equalTo(username);
+            data.once('value', function(snapshot){
+                if(snapshot.val() != null){
+                    if(snapshot.val()[0].password == password){
+                        logIn();
+                    } else {
+                        console.log('Couldn\'t Log in.');
+                    }
+                }
+            });
+        }, function(){
+            myApp.alert('Please log in to continue');
+            logInPopup();
+        });   
+    } else {
+        logIn();
+    }  
+}
+
+function logIn(){
+    createCookie('login', 'true', '100');
+
+    if(mainView.activePage.name == 'index'){
+        mainView.router.loadPage('drivers.html');
+    }           
+}
+
+function createCookie(name, value, days){
+    var expires;
+    if(days){
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toGMTString();
+    } else {
+        expires = "";
     }
-    
+    document.cookie = name + "=" + value + expires + "; path=/";
+}
+
+function getCookie(c_name){
+    if(document.cookie.length > 0){
+        c_start = document.cookie.indexOf(c_name + "=");
+        if(c_start != -1){
+            c_start = c_start + c_name.length + 1;
+            c_end = document.cookie.indexOf(";", c_start);
+            if(c_end == -1){
+                c_end = document.cookie.length;
+            }
+            return unescape(document.cookie.substring(c_start, c_end));
+        }
+    }
+    return "";
+}
+
+function deleteCookie(name) {
+  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+}
+
+myApp.onPageInit('*', function(page){
+    $('.signout').click(function(){
+        // mainView.router.loadPage('index.html');
+        deleteCookie('login')
+        logInPopup();
+    });
+
+    if(mainView.activePage.name == 'index'){
+       console.log(page.context.username); 
+    }
 });
 
 myApp.onPageInit('drivers', function(page){
@@ -85,44 +152,63 @@ myApp.onPageInit('drivers', function(page){
 });
 
 myApp.onPageInit('driver', function(page){
+    driverId = page.context.id;
     var stops = myApp.messages('.messages', {
         autoLayout: true
     });
 
     var count = 0;
-    database.ref('stops/').on('value', function(snapshot){
+    database.ref('stops/'+driverId+'/').on('value', function(snapshot){
         if(snapshot.val().length > 0){
             var date = "";
             var index = 0;
             var newDate = false;
+            stops.clean();
 
             $$.each(snapshot.val(), function(){
                 // Add as message
                 count ++;
-                
-                if(snapshot.val()[index].driverId == page.context.id){
-                    // Calculate day
-                    if(snapshot.val()[index].date != date){
-                        date = snapshot.val()[index].date;
-                        stops.addMessage({
-                            text: "Address: " + snapshot.val()[index].address + 
-                                    "<br>Size: " + snapshot.val()[index].size + 
-                                    "<br>Action: " + snapshot.val()[index].action,
-                            date: date,
-                            day: date,
-                            time: snapshot.val()[index].time
-                        })
-                    } else {
-                        stops.addMessage({
-                            text: "Address: " + snapshot.val()[index].address + 
-                                    "<br>Size: " + snapshot.val()[index].size + 
-                                    "<br>Action: " + snapshot.val()[index].action,
-                            date: date,
-                            time: snapshot.val()[index].time
-                        })
-                    }
-   
+                if(snapshot.val()[index].date != date){
+                    date = snapshot.val()[index].date;
+                    stops.addMessage({
+                        text: "Address: " + snapshot.val()[index].address + 
+                                "<br>Size: " + snapshot.val()[index].size + 
+                                "<br>Action: " + snapshot.val()[index].action,
+                        date: date,
+                        day: date,
+                        time: snapshot.val()[index].time
+                    });
+                } else {
+                    stops.addMessage({
+                        text: "Address: " + snapshot.val()[index].address + 
+                                "<br>Size: " + snapshot.val()[index].size + 
+                                "<br>Action: " + snapshot.val()[index].action,
+                        date: date,
+                        time: snapshot.val()[index].time
+                    });
                 }
+
+                $('.message').click(function(){
+                    var numMsg = $(this).index() - 1;
+
+                    var clickedLink = this;
+                    var popoverHtml = '<div class="popover delete-popover">'+
+                                        '<div class="popover-inner">'+
+                                          '<div class="list-block">'+
+                                            '<ul>'+
+                                              '<li><a href="#" class="item-link list-button delete-button">Delete</li>'+
+                                            '</ul>'+
+                                          '</div>'+
+                                        '</div>'+
+                                      '</div>';
+                    myApp.popover(popoverHtml, clickedLink);
+
+                    $('.delete-button').click(function(){
+                        console.log('Delete');
+                        database.ref('stops/'+driverId+'/'+numMsg).remove();
+                    });
+
+                });
 
                 index ++;
             });
@@ -130,24 +216,12 @@ myApp.onPageInit('driver', function(page){
         }
     });
 
-    $('.messages').click(function(){
-        console.log('Click');
-
-        var clickedLink = this;
-        var popoverHtml = '<div class="popover">'+
-                            '<div class="popover-inner">'+
-                              '<div class="list-block">'+
-                                '<ul>'+
-                                  '<li><a href="#" class="item-link list-button">Delete</li>'+
-                                '</ul>'+
-                              '</div>'+
-                            '</div>'+
-                          '</div>';
-        myApp.popover(popoverHtml, clickedLink);
-    })
-
-    $('.messagebar .buttons-row .button').click(function(){
-        $('.messagebar .buttons-row .button').removeClass('active');
+    $('.messagebar #size .button').click(function(){
+        $('.messagebar #size .button').removeClass('active');
+        $(this).addClass('active');
+    });
+    $('.messagebar #action .button').click(function(){
+        $('.messagebar #action .button').removeClass('active');
         $(this).addClass('active');
     });
 
@@ -155,7 +229,7 @@ myApp.onPageInit('driver', function(page){
         // Get values of address, size and action
         var address = $('#address').val();
         var size = $('#size .button.active').text();
-        var action = $('#action select').val();
+        var action = $('#action .button.active').text();
 
         // Show alert if not valid
         var error = false;
@@ -168,10 +242,9 @@ myApp.onPageInit('driver', function(page){
         if(!error){
             var driver = page.context.id;
             var datetime = new Date();
-            console.log(date);
             var date = (datetime.getMonth() + 1)+"/"+datetime.getDate ()+"/"+datetime.getFullYear();
             var time = datetime.getHours()+":"+datetime.getMinutes()+":"+datetime.getSeconds();
-            database.ref('stops/' + count).set({
+            database.ref('stops/' + driverId + '/' + count).set({
                 address: address,
                 size: size,
                 action: action,
@@ -181,7 +254,7 @@ myApp.onPageInit('driver', function(page){
                 time: time
             });
         }
-    })    
+    });    
 });
 
 

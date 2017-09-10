@@ -1,3 +1,4 @@
+
 /* Stylesheet for Guma App */
 @font-face {
   font-family: 'Framework7 Icons';
@@ -50,6 +51,9 @@
 }
 
 /* Driver Activity */
+.delete-popover{
+  width: 100px;
+}
 .messagebar textarea{
   width: 30%;
 }
@@ -72,6 +76,14 @@
 .messagebar .buttons-row .button{
   padding: 0 5px;
 }
+
+.messagebar .buttons-row.small{
+  width: 20%;
+}
+.messagebar .buttons-row.small .button{
+  padding: 0 5px;
+}
+
 .messagebar .buttons-row .button, .messagebar textarea, .messagebar .item-after{
   font-size: .7rem;
 }
