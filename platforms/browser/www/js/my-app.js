@@ -35,6 +35,8 @@ var database = firebase.database();
 // Handle Cordova Device Ready Event
 $$(document).on('deviceready', function() {
     logInPopup();
+
+    $('.content-block p').text(getSession().login);
 });
 
 function logInPopup(){
@@ -92,7 +94,6 @@ function getSession(){
 
 myApp.onPageInit('*', function(page){
     $('.signout').click(function(){
-        // mainView.router.loadPage('index.html');
         deleteSession();
         logInPopup();
     });
