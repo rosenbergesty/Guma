@@ -34,13 +34,11 @@ var database = firebase.database();
 
 // Handle Cordova Device Ready Event
 $$(document).on('deviceready', function() {
-    console.log("Device is ready!");
-
     logInPopup();
 });
 
 function logInPopup(){
-    if(getCookie('login') != 'true'){
+    if(getSession() == null){
         myApp.modalLogin("Please log in to continue", "Log In", function(username, password){
             console.log('login ' + username + ' | ' + password);
 
@@ -57,55 +55,45 @@ function logInPopup(){
         }, function(){
             myApp.alert('Please log in to continue');
             logInPopup();
-        });   
+        }); 
     } else {
         logIn();
-    }  
+    }
 }
 
 function logIn(){
-    createCookie('login', 'true', '100');
+    var today = new Date();
+    var expirationDate = new Date();
+    expirationDate.setTime(today.getTime() + 1000);
+
+    setSession({login: true, logout: false, expiration: expirationDate});
 
     if(mainView.activePage.name == 'index'){
         mainView.router.loadPage('drivers.html');
     }           
 }
 
-function createCookie(name, value, days){
-    var expires;
-    if(days){
-        var date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toGMTString();
-    } else {
-        expires = "";
-    }
-    document.cookie = name + "=" + value + expires + "; path=/";
+function setSession(data){
+    var sessionIdKey = "guma-session";
+    window.localStorage.setItem(sessionIdKey, JSON.stringify(data));
 }
-
-function getCookie(c_name){
-    if(document.cookie.length > 0){
-        c_start = document.cookie.indexOf(c_name + "=");
-        if(c_start != -1){
-            c_start = c_start + c_name.length + 1;
-            c_end = document.cookie.indexOf(";", c_start);
-            if(c_end == -1){
-                c_end = document.cookie.length;
-            }
-            return unescape(document.cookie.substring(c_start, c_end));
-        }
-    }
-    return "";
+function deleteSession(){
+    var sessionIdKey = "guma-session";
+    window.localStorage.removeItem(sessionIdKey);
 }
-
-function deleteCookie(name) {
-  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+function getSession(){
+    var sessionIdKey = "guma-session";
+    var result = null;
+    try{
+        result = JSON.parse(window.localStorage.getItem(sessionIdKey));
+    } catch(e){}
+    return result;
 }
 
 myApp.onPageInit('*', function(page){
     $('.signout').click(function(){
         // mainView.router.loadPage('index.html');
-        deleteCookie('login')
+        deleteSession();
         logInPopup();
     });
 
