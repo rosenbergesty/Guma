@@ -38,7 +38,7 @@ $$(document).on('deviceready', function() {
 });
 
 function logInPopup(){
-    if(window.localstorage.getItem("guma-login") != "true"){
+    if(!(window.localstorage.getItem("guma-login") == "true")){
         myApp.modalLogin("Please log in to continue", "Log In", function(username, password){
             console.log('login ' + username + ' | ' + password);
 
