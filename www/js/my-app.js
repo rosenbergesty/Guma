@@ -65,7 +65,7 @@ function logInPopup(){
 }
 
 function logIn(){
-    window.localstorage.setItem("guma-login", "true");
+    window.localStorage.setItem("guma-login", "true");
     $('.content-block p').text('hey there.');
     if(mainView.activePage.name == 'index'){
         mainView.router.loadPage('drivers.html');
