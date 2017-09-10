@@ -36,7 +36,7 @@ var database = firebase.database();
 $$(document).on('deviceready', function() {
     logInPopup();
 
-    $('.content-block p').text(getSession().login);
+    $('.content-block p').text(getSession());
 });
 
 function logInPopup(){
